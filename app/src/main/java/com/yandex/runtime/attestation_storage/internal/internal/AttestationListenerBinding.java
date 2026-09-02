@@ -1,0 +1,18 @@
+package com.yandex.runtime.attestation_storage.internal.internal;
+
+import com.yandex.runtime.NativeObject;
+import com.yandex.runtime.attestation_storage.internal.AttestationListener;
+
+public class AttestationListenerBinding implements AttestationListener {
+    private final NativeObject nativeObject;
+
+    @Override // com.yandex.runtime.attestation_storage.internal.AttestationListener
+    public native void onAttestationFailed(String str);
+
+    @Override // com.yandex.runtime.attestation_storage.internal.AttestationListener
+    public native void onAttestationReceived(byte[] bArr);
+
+    protected AttestationListenerBinding(NativeObject nativeObject) {
+        this.nativeObject = nativeObject;
+    }
+}

@@ -1,0 +1,7 @@
+package com.google.android.gms.internal.cast;
+
+final class zzwm extends IllegalArgumentException {
+    zzwm(int i, int i2) {
+        super("Unpaired surrogate at index " + i + " of " + i2);
+    }
+}

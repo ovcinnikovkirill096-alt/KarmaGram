@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt" android:drawable="@drawable/_ayu_splash__0_res_0x7f08000f">
+    <target
+        android:name="bg_1"
+        android:animation="@drawable/_ayu_splash__1_res_0x7f080010"/>
+    <target
+        android:name="bg"
+        android:animation="@drawable/_ayu_splash__2_res_0x7f080011"/>
+    <target
+        android:name="logo"
+        android:animation="@drawable/_ayu_splash__3_res_0x7f080012"/>
+    <target
+        android:name="a"
+        android:animation="@drawable/_ayu_splash__4_res_0x7f080013"/>
+    <target
+        android:name="ls"
+        android:animation="@drawable/_ayu_splash__5_res_0x7f080014"/>
+    <target
+        android:name="rl"
+        android:animation="@drawable/_ayu_splash__6_res_0x7f080015"/>
+    <target
+        android:name="lb"
+        android:animation="@drawable/_ayu_splash__7_res_0x7f080016"/>
+    <target
+        android:name="rs"
+        android:animation="@drawable/_ayu_splash__8_res_0x7f080017"/>
+</animated-vector>

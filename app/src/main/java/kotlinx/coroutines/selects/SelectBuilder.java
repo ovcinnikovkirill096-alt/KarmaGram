@@ -1,0 +1,10 @@
+package kotlinx.coroutines.selects;
+
+import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
+
+public interface SelectBuilder {
+    void invoke(SelectClause0 selectClause0, Function1 function1);
+
+    void invoke(SelectClause1 selectClause1, Function2 function2);
+}

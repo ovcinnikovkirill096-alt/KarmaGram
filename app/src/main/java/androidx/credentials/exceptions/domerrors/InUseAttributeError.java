@@ -1,0 +1,20 @@
+package androidx.credentials.exceptions.domerrors;
+
+import kotlin.jvm.internal.DefaultConstructorMarker;
+
+public final class InUseAttributeError extends DomError {
+    public static final Companion Companion = new Companion(null);
+
+    public static final class Companion {
+        public /* synthetic */ Companion(DefaultConstructorMarker defaultConstructorMarker) {
+            this();
+        }
+
+        private Companion() {
+        }
+    }
+
+    public InUseAttributeError() {
+        super("androidx.credentials.TYPE_IN_USE_ATTRIBUTE_ERROR");
+    }
+}

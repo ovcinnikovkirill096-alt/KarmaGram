@@ -1,0 +1,1197 @@
+package org.telegram.ui.Stories.recorder;
+
+import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.ColorFilter;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RectF;
+import android.graphics.drawable.AnimatedVectorDrawable;
+import android.graphics.drawable.Drawable;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
+import androidx.core.content.ContextCompat;
+import okhttp3.internal.url._UrlKt;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.LiteMode;
+import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MessagesController;
+import org.telegram.messenger.R;
+import org.telegram.messenger.UserConfig;
+import org.telegram.messenger.Utilities;
+import org.telegram.tgnet.TLObject;
+import org.telegram.ui.ActionBar.AlertDialog;
+import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Components.AnimatedFloat;
+import org.telegram.ui.Components.AnimatedTextView;
+import org.telegram.ui.Components.BlobDrawable;
+import org.telegram.ui.Components.BlurringShader;
+import org.telegram.ui.Components.ButtonBounce;
+import org.telegram.ui.Components.CubicBezierInterpolator;
+import org.telegram.ui.Components.ItemOptions;
+import org.telegram.ui.Components.LayoutHelper;
+import org.telegram.ui.Components.RLottieDrawable;
+import org.telegram.ui.Components.SizeNotifierFrameLayout;
+import org.telegram.ui.Components.Text;
+
+public abstract class CaptionStory extends CaptionContainerView {
+    public static final int[] periods = {21600, 43200, 86400, 172800};
+    private float amplitude;
+    private final AnimatedFloat animatedAmplitude;
+    private final BlobDrawable bigWaveDrawable;
+    private final Path boundsPath;
+    private final AnimatedFloat cancel2T;
+    private final RectF cancelBounds;
+    private final AnimatedFloat cancelT;
+    private Text cancelText;
+    private boolean cancelling;
+    private final Path circlePath;
+    private RoundVideoRecorder currentRecorder;
+    private final Runnable doneCancel;
+    private Drawable flipButton;
+    private float fromX;
+    private float fromY;
+    private boolean hasRoundVideo;
+    private final AnimatedFloat lock2T;
+    private final Paint lockBackgroundPaint;
+    private final RectF lockBounds;
+    private final AnimatedFloat lockCancelledT;
+    private final Path lockHandle;
+    private final Paint lockHandlePaint;
+    private final Paint lockPaint;
+    private float lockProgress;
+    private final RectF lockRect;
+    private final Paint lockShadowPaint;
+    private final AnimatedFloat lockT;
+    private boolean locked;
+    private Utilities.Callback onPeriodUpdate;
+    private Utilities.Callback onPremiumHintShow;
+    public ImageView periodButton;
+    public CaptionContainerView.PeriodDrawable periodDrawable;
+    private int periodIndex;
+    private ItemOptions periodPopup;
+    private boolean periodVisible;
+    private final RecordDot recordPaint;
+    private boolean recordTouch;
+    private boolean recording;
+    public ImageView roundButton;
+    public ButtonBounce roundButtonBounce;
+    private final Drawable roundDrawable;
+    private final Paint roundPaint;
+    private float slideProgress;
+    private Paint slideToCancelArrowPaint;
+    private Path slideToCancelArrowPath;
+    private Text slideToCancelText;
+    private long startTime;
+    private boolean stopping;
+    private final AnimatedTextView.AnimatedTextDrawable timerTextDrawable;
+    private final BlobDrawable tinyWaveDrawable;
+    private final Paint whitePaint;
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    public int additionalRightMargin() {
+        return 36;
+    }
+
+    public abstract boolean canRecord();
+
+    public int getTimelineHeight() {
+        return 0;
+    }
+
+    public abstract void putRecorder(RoundVideoRecorder roundVideoRecorder);
+
+    public abstract void removeRound();
+
+    public CaptionStory(Context context, final FrameLayout frameLayout, SizeNotifierFrameLayout sizeNotifierFrameLayout, FrameLayout frameLayout2, final Theme.ResourcesProvider resourcesProvider, BlurringShader.BlurManager blurManager) {
+        super(context, frameLayout, sizeNotifierFrameLayout, frameLayout2, resourcesProvider, blurManager);
+        this.periodVisible = true;
+        this.periodIndex = 0;
+        this.recordPaint = new RecordDot(this);
+        AnimatedTextView.AnimatedTextDrawable animatedTextDrawable = new AnimatedTextView.AnimatedTextDrawable(false, true, true);
+        this.timerTextDrawable = animatedTextDrawable;
+        CubicBezierInterpolator cubicBezierInterpolator = CubicBezierInterpolator.DEFAULT;
+        animatedTextDrawable.setAnimationProperties(0.16f, 0L, 50L, cubicBezierInterpolator);
+        animatedTextDrawable.setTextSize(AndroidUtilities.dp(15.0f));
+        animatedTextDrawable.setTypeface(AndroidUtilities.bold());
+        animatedTextDrawable.setText("0:00.0");
+        animatedTextDrawable.setTextColor(-1);
+        Paint paint = new Paint(1);
+        this.whitePaint = paint;
+        Paint paint2 = new Paint(1);
+        this.roundPaint = paint2;
+        BlobDrawable blobDrawable = new BlobDrawable(11, LiteMode.FLAGS_CHAT);
+        this.tinyWaveDrawable = blobDrawable;
+        BlobDrawable blobDrawable2 = new BlobDrawable(12, LiteMode.FLAGS_CHAT);
+        this.bigWaveDrawable = blobDrawable2;
+        paint.setColor(-1);
+        paint2.setColor(-15033089);
+        blobDrawable.minRadius = AndroidUtilities.dp(47.0f);
+        blobDrawable.maxRadius = AndroidUtilities.dp(55.0f);
+        blobDrawable.generateBlob();
+        blobDrawable2.minRadius = AndroidUtilities.dp(47.0f);
+        blobDrawable2.maxRadius = AndroidUtilities.dp(55.0f);
+        blobDrawable2.generateBlob();
+        this.roundDrawable = getContext().getResources().getDrawable(R.drawable.input_video_pressed).mutate();
+        this.animatedAmplitude = new AnimatedFloat(new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda0
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.invalidateDrawOver2();
+            }
+        }, 0L, 200L, cubicBezierInterpolator);
+        this.circlePath = new Path();
+        this.boundsPath = new Path();
+        this.lockBackgroundPaint = new Paint(1);
+        this.lockShadowPaint = new Paint(1);
+        this.lockPaint = new Paint(1);
+        Paint paint3 = new Paint(1);
+        this.lockHandlePaint = paint3;
+        paint3.setStyle(Paint.Style.STROKE);
+        Runnable runnable = new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda0
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.invalidateDrawOver2();
+            }
+        };
+        CubicBezierInterpolator cubicBezierInterpolator2 = CubicBezierInterpolator.EASE_OUT_QUINT;
+        this.lockCancelledT = new AnimatedFloat(runnable, 350L, cubicBezierInterpolator2);
+        this.lockBounds = new RectF();
+        this.cancelBounds = new RectF();
+        this.lockRect = new RectF();
+        this.lockHandle = new Path();
+        this.cancelT = new AnimatedFloat(this, 0L, 350L, cubicBezierInterpolator2);
+        this.cancel2T = new AnimatedFloat(new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda0
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.invalidateDrawOver2();
+            }
+        }, 0L, 420L, cubicBezierInterpolator2);
+        this.lockT = new AnimatedFloat(this, 0L, 350L, cubicBezierInterpolator2);
+        this.lock2T = new AnimatedFloat(new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda0
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.invalidateDrawOver2();
+            }
+        }, 0L, 350L, cubicBezierInterpolator2);
+        this.doneCancel = new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda1
+            @Override // java.lang.Runnable
+            public final void run() {
+                this.f$0.lambda$new$6();
+            }
+        };
+        ImageView imageView = new ImageView(context);
+        this.roundButton = imageView;
+        this.roundButtonBounce = new ButtonBounce(imageView);
+        this.roundButton.setImageResource(R.drawable.input_video_story);
+        this.roundButton.setBackground(Theme.createSelectorDrawable(1090519039, 1, AndroidUtilities.dp(18.0f)));
+        ImageView imageView2 = this.roundButton;
+        ImageView.ScaleType scaleType = ImageView.ScaleType.CENTER;
+        imageView2.setScaleType(scaleType);
+        addView(this.roundButton, LayoutHelper.createFrame(44, 44.0f, 85, 0.0f, 0.0f, 11.0f, 6.0f));
+        this.roundButton.setOnClickListener(new View.OnClickListener() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda2
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.lambda$new$0(view);
+            }
+        });
+        ImageView imageView3 = new ImageView(context);
+        this.periodButton = imageView3;
+        CaptionContainerView.PeriodDrawable periodDrawable = new CaptionContainerView.PeriodDrawable();
+        this.periodDrawable = periodDrawable;
+        imageView3.setImageDrawable(periodDrawable);
+        this.periodButton.setBackground(Theme.createSelectorDrawable(1090519039, 1, AndroidUtilities.dp(18.0f)));
+        this.periodButton.setScaleType(scaleType);
+        setPeriod(86400, false);
+        addView(this.periodButton, LayoutHelper.createFrame(44, 44.0f, 85, 0.0f, 0.0f, 51.0f, 6.0f));
+        this.periodButton.setOnClickListener(new View.OnClickListener() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda3
+            @Override // android.view.View.OnClickListener
+            public final void onClick(View view) {
+                this.f$0.lambda$new$5(frameLayout, resourcesProvider, view);
+            }
+        });
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$new$0(View view) {
+        showRemoveRoundAlert();
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$new$5(FrameLayout frameLayout, Theme.ResourcesProvider resourcesProvider, View view) {
+        String pluralString;
+        ItemOptions itemOptions = this.periodPopup;
+        if (itemOptions != null && itemOptions.isShown()) {
+            return;
+        }
+        final Utilities.Callback callback = new Utilities.Callback() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda4
+            @Override // org.telegram.messenger.Utilities.Callback
+            public final void run(Object obj) {
+                this.f$0.lambda$new$1((Integer) obj);
+            }
+        };
+        boolean zIsPremium = UserConfig.getInstance(this.currentAccount).isPremium();
+        final Utilities.Callback callback2 = zIsPremium ? null : new Utilities.Callback() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda5
+            @Override // org.telegram.messenger.Utilities.Callback
+            public final void run(Object obj) {
+                this.f$0.lambda$new$2((Integer) obj);
+            }
+        };
+        ItemOptions itemOptionsMakeOptions = ItemOptions.makeOptions(frameLayout, resourcesProvider, this.periodButton);
+        this.periodPopup = itemOptionsMakeOptions;
+        itemOptionsMakeOptions.addText(LocaleController.getString("StoryPeriodHint"), 13, AndroidUtilities.dp(200.0f));
+        this.periodPopup.addGap();
+        int i = 0;
+        while (true) {
+            int[] iArr = periods;
+            if (i < iArr.length) {
+                final int i2 = iArr[i];
+                ItemOptions itemOptions2 = this.periodPopup;
+                if (i2 == Integer.MAX_VALUE) {
+                    pluralString = LocaleController.getString("StoryPeriodKeep");
+                } else {
+                    pluralString = LocaleController.formatPluralString("Hours", i2 / 3600, new Object[0]);
+                }
+                itemOptions2.add(0, pluralString, Theme.key_actionBarDefaultSubmenuItem, new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda6
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        callback.run(Integer.valueOf(i2));
+                    }
+                }).putPremiumLock((zIsPremium || i2 == 86400 || i2 == Integer.MAX_VALUE) ? null : new Runnable() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda7
+                    @Override // java.lang.Runnable
+                    public final void run() {
+                        callback2.run(Integer.valueOf(i2));
+                    }
+                });
+                if (this.periodIndex == i) {
+                    this.periodPopup.putCheck();
+                }
+                i++;
+            } else {
+                this.periodPopup.setDimAlpha(0).show();
+                return;
+            }
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$new$1(Integer num) {
+        setPeriod(num.intValue());
+        Utilities.Callback callback = this.onPeriodUpdate;
+        if (callback != null) {
+            callback.run(num);
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$new$2(Integer num) {
+        Utilities.Callback callback = this.onPremiumHintShow;
+        if (callback != null) {
+            callback.run(num);
+        }
+    }
+
+    private void checkFlipButton() {
+        if (this.flipButton != null) {
+            return;
+        }
+        this.flipButton = ContextCompat.getDrawable(getContext(), R.drawable.avd_flip);
+    }
+
+    public void setHasRoundVideo(boolean z) {
+        this.roundButton.setImageResource(z ? R.drawable.input_video_story_remove : R.drawable.input_video_story);
+        this.hasRoundVideo = z;
+    }
+
+    /* JADX WARN: Failed to calculate best type for var: r15v11 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r15v11 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v14 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v14 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v15 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v15 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v18 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v18 ??, new type: org.telegram.ui.Components.Text
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v19 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v19 ??, new type: android.graphics.RectF
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v7 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v7 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v8 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v8 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r1v9 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r1v9 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r24v0 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r24v0 ??, new type: android.graphics.RectF
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r2v10 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r2v10 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r2v11 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r2v11 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r2v12 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r2v12 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r2v13 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r2v13 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r2v14 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r2v14 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r2v9 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r2v9 ??, new type: org.telegram.ui.Components.Text
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r3v1 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r3v1 ??, new type: org.telegram.ui.Components.AnimatedFloat
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.calculateFromBounds(FixTypesVisitor.java:159)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.setBestType(FixTypesVisitor.java:136)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.deduceType(FixTypesVisitor.java:241)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.tryDeduceTypes(FixTypesVisitor.java:224)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.visit(FixTypesVisitor.java:94)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r3v1 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r3v1 ??, new type: org.telegram.ui.Components.AnimatedFloat
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r3v29 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r3v29 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r3v30 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r3v30 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r3v31 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r3v31 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r4v18 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r4v18 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r4v19 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r4v19 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r6v14 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r6v14 ??, new type: org.telegram.ui.Components.Text
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r6v15 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r6v15 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r6v17 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r6v17 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r9v0 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r9v0 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.calculateFromBounds(FixTypesVisitor.java:159)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.setBestType(FixTypesVisitor.java:136)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.deduceType(FixTypesVisitor.java:241)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.tryDeduceTypes(FixTypesVisitor.java:224)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.visit(FixTypesVisitor.java:94)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to calculate best type for var: r9v0 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r9v0 ??, new type: float
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.calculateFromBounds(TypeInferenceVisitor.java:147)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setBestType(TypeInferenceVisitor.java:125)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$2(TypeInferenceVisitor.java:103)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:103)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Failed to set immutable type for var: r24v0 ??
+    jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r24v0 ??, new type: android.graphics.RectF
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+    	at jadx.core.dex.visitors.typeinference.TypeUpdate.applyWithWiderIgnSame(TypeUpdate.java:73)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.setImmutableType(TypeInferenceVisitor.java:111)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.lambda$runTypePropagation$1(TypeInferenceVisitor.java:102)
+    	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.runTypePropagation(TypeInferenceVisitor.java:102)
+    	at jadx.core.dex.visitors.typeinference.TypeInferenceVisitor.visit(TypeInferenceVisitor.java:75)
+    Caused by: java.lang.NullPointerException
+     */
+    /* JADX WARN: Type inference fix 'apply assigned field type' failed
+    java.lang.UnsupportedOperationException: ArgType.getObject(), call class: class jadx.core.dex.instructions.args.ArgType$PrimitiveArg
+    	at jadx.core.dex.instructions.args.ArgType.getObject(ArgType.java:596)
+    	at jadx.core.dex.attributes.nodes.ClassTypeVarsAttr.getTypeVarsMapFor(ClassTypeVarsAttr.java:35)
+    	at jadx.core.dex.nodes.utils.TypeUtils.replaceClassGenerics(TypeUtils.java:177)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.insertExplicitUseCast(FixTypesVisitor.java:397)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.tryFieldTypeWithNewCasts(FixTypesVisitor.java:359)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.applyFieldType(FixTypesVisitor.java:309)
+    	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.visit(FixTypesVisitor.java:94)
+     */
+    /*  JADX ERROR: Types fix failed
+        jadx.core.utils.exceptions.JadxRuntimeException: Type update failed for variable: r9v0 ??, new type: float
+        	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:109)
+        	at jadx.core.dex.visitors.typeinference.TypeUpdate.apply(TypeUpdate.java:59)
+        	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.tryPossibleTypes(FixTypesVisitor.java:186)
+        	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.deduceType(FixTypesVisitor.java:245)
+        	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.tryDeduceTypes(FixTypesVisitor.java:224)
+        	at jadx.core.dex.visitors.typeinference.FixTypesVisitor.visit(FixTypesVisitor.java:94)
+        Caused by: java.lang.NullPointerException
+        */
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    public void drawOver(android.graphics.Canvas r23, android.graphics.RectF r24) {
+        /*
+            Method dump skipped, instruction units count: 685
+            To view this dump add '--comments-level debug' option
+        */
+        throw new UnsupportedOperationException("Method not decompiled: org.telegram.ui.Stories.recorder.CaptionStory.drawOver(android.graphics.Canvas, android.graphics.RectF):void");
+    }
+
+    public void setAmplitude(double d) {
+        this.amplitude = (float) (Math.min(1800.0d, d) / 1800.0d);
+        invalidate();
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    public void drawOver2(Canvas canvas, RectF rectF, float f) {
+        if (f <= 0.0f) {
+            return;
+        }
+        float f2 = this.cancel2T.set(this.cancelling);
+        float f3 = this.lock2T.set(this.locked);
+        float f4 = this.animatedAmplitude.set(this.amplitude);
+        float f5 = 1.0f - f2;
+        float fDp = (AndroidUtilities.dp(41.0f) + (AndroidUtilities.dp(30.0f) * f4 * (1.0f - this.slideProgress))) * f5 * f;
+        float fLerp = AndroidUtilities.lerp((rectF.right - AndroidUtilities.dp(20.0f)) - (((getWidth() * 0.35f) * this.slideProgress) * (1.0f - f3)), rectF.left + AndroidUtilities.dp(20.0f), f2);
+        float fDp2 = rectF.bottom - AndroidUtilities.dp(20.0f);
+        if (LiteMode.isEnabled(LiteMode.FLAGS_CHAT)) {
+            this.tinyWaveDrawable.minRadius = AndroidUtilities.dp(47.0f);
+            this.tinyWaveDrawable.maxRadius = AndroidUtilities.dp(47.0f) + (AndroidUtilities.dp(15.0f) * BlobDrawable.FORM_SMALL_MAX);
+            this.bigWaveDrawable.minRadius = AndroidUtilities.dp(50.0f);
+            this.bigWaveDrawable.maxRadius = AndroidUtilities.dp(50.0f) + (AndroidUtilities.dp(12.0f) * BlobDrawable.FORM_BIG_MAX);
+            this.bigWaveDrawable.update(f4, 1.01f);
+            this.tinyWaveDrawable.update(f4, 1.02f);
+            this.bigWaveDrawable.paint.setColor(Theme.multAlpha(this.roundPaint.getColor(), 0.15f * f));
+            canvas.save();
+            float f6 = fDp / this.bigWaveDrawable.minRadius;
+            canvas.scale(f6, f6, fLerp, fDp2);
+            BlobDrawable blobDrawable = this.bigWaveDrawable;
+            blobDrawable.draw(fLerp, fDp2, canvas, blobDrawable.paint);
+            canvas.restore();
+            this.tinyWaveDrawable.paint.setColor(Theme.multAlpha(this.roundPaint.getColor(), 0.3f * f));
+            canvas.save();
+            float f7 = fDp / this.tinyWaveDrawable.minRadius;
+            canvas.scale(f7, f7, fLerp, fDp2);
+            BlobDrawable blobDrawable2 = this.tinyWaveDrawable;
+            blobDrawable2.draw(fLerp, fDp2, canvas, blobDrawable2.paint);
+            canvas.restore();
+        }
+        float fMin = Math.min(fDp, AndroidUtilities.dp(55.0f));
+        float f8 = f * 255.0f;
+        this.roundPaint.setAlpha((int) f8);
+        canvas.drawCircle(fLerp, fDp2, fMin, this.roundPaint);
+        canvas.save();
+        this.circlePath.rewind();
+        Path path = this.circlePath;
+        Path.Direction direction = Path.Direction.CW;
+        path.addCircle(fLerp, fDp2, fMin, direction);
+        canvas.clipPath(this.circlePath);
+        Drawable drawable = this.roundDrawable;
+        drawable.setBounds((int) (fLerp - (((drawable.getIntrinsicWidth() / 2.0f) * f5) * (this.stopping ? f : 1.0f))), (int) (fDp2 - (((this.roundDrawable.getIntrinsicHeight() / 2.0f) * f5) * (this.stopping ? f : 1.0f))), (int) (((this.roundDrawable.getIntrinsicWidth() / 2.0f) * f5 * (this.stopping ? f : 1.0f)) + fLerp), (int) (((this.roundDrawable.getIntrinsicHeight() / 2.0f) * f5 * (this.stopping ? f : 1.0f)) + fDp2));
+        this.roundDrawable.setAlpha((int) (f5 * 255.0f * (this.stopping ? f : 1.0f)));
+        this.roundDrawable.draw(canvas);
+        if (f3 > 0.0f) {
+            float fDpf2 = (AndroidUtilities.dpf2(19.33f) / 2.0f) * f3 * f;
+            RectF rectF2 = AndroidUtilities.rectTmp;
+            rectF2.set(fLerp - fDpf2, fDp2 - fDpf2, fLerp + fDpf2, fDp2 + fDpf2);
+            canvas.drawRoundRect(rectF2, AndroidUtilities.dp(5.33f), AndroidUtilities.dp(5.33f), this.whitePaint);
+        }
+        canvas.restore();
+        drawLock(canvas, rectF, f);
+        if (this.cancelling && (this.roundButton.getVisibility() == 4 || this.periodButton.getVisibility() == 4 || this.collapsedT.get() > 0.0f)) {
+            canvas.saveLayerAlpha(rectF, (int) ((1.0f - this.keyboardT) * 255.0f), 31);
+            this.boundsPath.rewind();
+            this.boundsPath.addRoundRect(rectF, AndroidUtilities.dp(21.0f), AndroidUtilities.dp(21.0f), direction);
+            canvas.clipPath(this.boundsPath);
+            if (this.roundButton.getVisibility() == 4 || this.collapsedT.get() > 0.0f) {
+                canvas.save();
+                canvas.translate(this.roundButton.getX() + (AndroidUtilities.dp(180.0f) * f5), this.roundButton.getY());
+                this.roundButton.draw(canvas);
+                canvas.restore();
+            }
+            if (this.periodButton.getVisibility() == 4 || this.collapsedT.get() > 0.0f) {
+                canvas.save();
+                canvas.translate(this.periodButton.getX() + (AndroidUtilities.dp(180.0f) * f5), this.periodButton.getY());
+                this.periodButton.draw(canvas);
+                canvas.restore();
+            }
+            canvas.restore();
+        }
+        checkFlipButton();
+        this.flipButton.setAlpha((int) (f8 * f5));
+        float timelineHeight = getTimelineHeight();
+        this.flipButton.setBounds(((int) rectF.left) + AndroidUtilities.dp(4.0f), (int) ((rectF.top - timelineHeight) - AndroidUtilities.dp(48.0f)), (int) (rectF.left + AndroidUtilities.dp(40.0f)), (int) ((rectF.top - timelineHeight) - AndroidUtilities.dp(12.0f)));
+        this.flipButton.draw(canvas);
+    }
+
+    private void drawLock(Canvas canvas, RectF rectF, float f) {
+        float f2 = this.cancel2T.get();
+        float f3 = this.lock2T.get();
+        float fLerp = AndroidUtilities.lerp(this.lockCancelledT.set(this.slideProgress < 0.4f), 0.0f, f3) * (1.0f - f2) * f;
+        float fDp = AndroidUtilities.dp(36.0f) * fLerp;
+        float fLerp2 = AndroidUtilities.lerp(AndroidUtilities.dp(50.0f), AndroidUtilities.dp(36.0f), f3) * fLerp;
+        float fDp2 = rectF.right - AndroidUtilities.dp(20.0f);
+        float f4 = fLerp2 / 2.0f;
+        float f5 = 1.0f - f3;
+        float fLerp3 = AndroidUtilities.lerp(((rectF.bottom - AndroidUtilities.dp(80.0f)) - f4) - ((AndroidUtilities.dp(120.0f) * this.lockProgress) * f5), rectF.bottom - AndroidUtilities.dp(20.0f), 1.0f - fLerp);
+        float f6 = fDp / 2.0f;
+        this.lockBounds.set(fDp2 - f6, fLerp3 - f4, f6 + fDp2, f4 + fLerp3);
+        float fLerp4 = AndroidUtilities.lerp(AndroidUtilities.dp(18.0f), AndroidUtilities.dp(14.0f), f3);
+        this.lockShadowPaint.setShadowLayer(AndroidUtilities.dp(1.0f), 0.0f, AndroidUtilities.dp(0.66f), Theme.multAlpha(536870912, fLerp));
+        this.lockShadowPaint.setColor(0);
+        canvas.drawRoundRect(this.lockBounds, fLerp4, fLerp4, this.lockShadowPaint);
+        Paint paint = this.backgroundBlur.getPaint(fLerp);
+        if (paint == null) {
+            this.lockBackgroundPaint.setColor(TLObject.FLAG_30);
+            this.lockBackgroundPaint.setAlpha((int) (64.0f * fLerp));
+            canvas.drawRoundRect(this.lockBounds, fLerp4, fLerp4, this.lockBackgroundPaint);
+        } else {
+            canvas.drawRoundRect(this.lockBounds, fLerp4, fLerp4, paint);
+            this.backgroundPaint.setAlpha((int) (51.0f * fLerp));
+            canvas.drawRoundRect(this.lockBounds, fLerp4, fLerp4, this.backgroundPaint);
+        }
+        canvas.save();
+        canvas.scale(fLerp, fLerp, fDp2, fLerp3);
+        this.lockPaint.setColor(Theme.multAlpha(-1, fLerp));
+        this.lockHandlePaint.setColor(Theme.multAlpha(-1, fLerp * f5));
+        float fLerp5 = AndroidUtilities.lerp(AndroidUtilities.dp(15.33f), AndroidUtilities.dp(13.0f), f3);
+        float fLerp6 = AndroidUtilities.lerp(AndroidUtilities.dp(12.66f), AndroidUtilities.dp(13.0f), f3);
+        float fDp3 = fLerp3 + (AndroidUtilities.dp(4.0f) * f5);
+        canvas.rotate(this.lockProgress * 12.0f * f5, fDp2, fDp3);
+        float f7 = fLerp5 / 2.0f;
+        float f8 = fLerp6 / 2.0f;
+        float f9 = fDp3 - f8;
+        this.lockRect.set(fDp2 - f7, f9, f7 + fDp2, fDp3 + f8);
+        canvas.drawRoundRect(this.lockRect, AndroidUtilities.dp(3.66f), AndroidUtilities.dp(3.66f), this.lockPaint);
+        if (f3 < 1.0f) {
+            canvas.save();
+            canvas.rotate(this.lockProgress * 12.0f * f5, fDp2, f9);
+            canvas.translate(0.0f, f8 * f3);
+            canvas.scale(f5, f5, fDp2, f9);
+            this.lockHandle.rewind();
+            float fDp4 = AndroidUtilities.dp(4.33f);
+            float fDp5 = f9 - AndroidUtilities.dp(3.66f);
+            float f10 = fDp2 + fDp4;
+            this.lockHandle.moveTo(f10, AndroidUtilities.dp(3.66f) + fDp5);
+            this.lockHandle.lineTo(f10, fDp5);
+            RectF rectF2 = AndroidUtilities.rectTmp;
+            float f11 = fDp2 - fDp4;
+            rectF2.set(f11, fDp5 - fDp4, f10, fDp4 + fDp5);
+            this.lockHandle.arcTo(rectF2, 0.0f, -180.0f, false);
+            this.lockHandle.lineTo(f11, fDp5 + (AndroidUtilities.dp(3.66f) * AndroidUtilities.lerp(AndroidUtilities.lerp(0.4f, 0.0f, this.lockProgress), 1.0f, f3)));
+            this.lockHandlePaint.setStrokeWidth(AndroidUtilities.dp(2.0f));
+            canvas.drawPath(this.lockHandle, this.lockHandlePaint);
+            canvas.restore();
+        }
+        canvas.restore();
+    }
+
+    public void setPeriod(int i) {
+        setPeriod(i, true);
+    }
+
+    public void setPeriodVisible(boolean z) {
+        this.periodVisible = z;
+        this.periodButton.setVisibility((!z || this.keyboardShown) ? 8 : 0);
+    }
+
+    public void setPeriod(int i, boolean z) {
+        int i2 = 0;
+        while (true) {
+            int[] iArr = periods;
+            if (i2 >= iArr.length) {
+                i2 = 2;
+                break;
+            } else if (iArr[i2] == i) {
+                break;
+            } else {
+                i2++;
+            }
+        }
+        if (this.periodIndex == i2) {
+            return;
+        }
+        this.periodIndex = i2;
+        this.periodDrawable.setValue(i / 3600, false, z);
+    }
+
+    public void hidePeriodPopup() {
+        ItemOptions itemOptions = this.periodPopup;
+        if (itemOptions != null) {
+            itemOptions.dismiss();
+            this.periodPopup = null;
+        }
+    }
+
+    public void setOnPeriodUpdate(Utilities.Callback<Integer> callback) {
+        this.onPeriodUpdate = callback;
+    }
+
+    public void setOnPremiumHint(Utilities.Callback<Integer> callback) {
+        this.onPremiumHintShow = callback;
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    protected void beforeUpdateShownKeyboard(boolean z) {
+        if (z) {
+            return;
+        }
+        this.periodButton.setVisibility(this.periodVisible ? 0 : 8);
+        this.roundButton.setVisibility(0);
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    protected void onUpdateShowKeyboard(float f) {
+        float f2 = 1.0f - f;
+        this.periodButton.setAlpha(f2);
+        this.roundButton.setAlpha(f2);
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    protected void afterUpdateShownKeyboard(boolean z) {
+        this.periodButton.setVisibility((z || !this.periodVisible) ? 8 : 0);
+        this.roundButton.setVisibility(z ? 8 : 0);
+        if (z) {
+            this.periodButton.setVisibility(8);
+        }
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    protected int getCaptionPremiumLimit() {
+        return MessagesController.getInstance(this.currentAccount).storyCaptionLengthLimitPremium;
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView
+    protected int getCaptionDefaultLimit() {
+        return MessagesController.getInstance(this.currentAccount).storyCaptionLengthLimitDefault;
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView, android.view.ViewGroup, android.view.View
+    public boolean dispatchTouchEvent(MotionEvent motionEvent) {
+        RoundVideoRecorder roundVideoRecorder;
+        Drawable drawable;
+        if (this.recording && (roundVideoRecorder = this.currentRecorder) != null && roundVideoRecorder.cameraView != null && (drawable = this.flipButton) != null) {
+            RectF rectF = AndroidUtilities.rectTmp;
+            rectF.set(drawable.getBounds());
+            rectF.inset(-AndroidUtilities.dp(12.0f), -AndroidUtilities.dp(12.0f));
+            for (int i = 0; i < motionEvent.getPointerCount(); i++) {
+                if (AndroidUtilities.rectTmp.contains(motionEvent.getX(i), motionEvent.getY(i))) {
+                    if (motionEvent.getAction() == 0 || motionEvent.getActionMasked() == 5) {
+                        this.currentRecorder.cameraView.switchCamera();
+                        Drawable drawable2 = this.flipButton;
+                        if (drawable2 instanceof AnimatedVectorDrawable) {
+                            ((AnimatedVectorDrawable) drawable2).start();
+                        }
+                    }
+                    if (this.recordTouch) {
+                        break;
+                    }
+                    return true;
+                }
+            }
+        }
+        RectF rectF2 = AndroidUtilities.rectTmp;
+        rectF2.set(this.roundButton.getX(), this.roundButton.getY(), this.roundButton.getX() + this.roundButton.getMeasuredWidth(), this.roundButton.getY() + this.roundButton.getMeasuredHeight());
+        if (this.recordTouch || (!this.hasRoundVideo && !this.keyboardShown && rectF2.contains(motionEvent.getX(), motionEvent.getY()))) {
+            return roundButtonTouchEvent(motionEvent);
+        }
+        if (this.recording && this.locked && this.cancelBounds.contains(motionEvent.getX(), motionEvent.getY())) {
+            releaseRecord(false, true);
+            this.recordTouch = false;
+            return true;
+        }
+        if (this.recording && (this.lockBounds.contains(motionEvent.getX(), motionEvent.getY()) || getBounds().contains(motionEvent.getX(), motionEvent.getY()))) {
+            releaseRecord(false, false);
+            this.recordTouch = false;
+            return true;
+        }
+        return super.dispatchTouchEvent(motionEvent);
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$new$6() {
+        setCollapsed(false, Integer.MIN_VALUE);
+        this.roundButton.setVisibility(0);
+        this.periodButton.setVisibility(0);
+    }
+
+    private boolean roundButtonTouchEvent(MotionEvent motionEvent) {
+        if (motionEvent.getAction() == 0) {
+            if (stopRecording()) {
+                return true;
+            }
+            this.recordTouch = true;
+            if (getParent() != null) {
+                getParent().requestDisallowInterceptTouchEvent(true);
+            }
+            if (!canRecord()) {
+                return true;
+            }
+            AndroidUtilities.cancelRunOnUIThread(this.doneCancel);
+            this.fromX = motionEvent.getX();
+            this.fromY = motionEvent.getY();
+            this.amplitude = 0.0f;
+            this.slideProgress = 0.0f;
+            this.cancelT.set(0.0f, true);
+            this.cancel2T.set(0.0f, true);
+            this.cancelling = false;
+            this.stopping = false;
+            this.locked = false;
+            this.recordPaint.reset();
+            this.recording = true;
+            this.startTime = System.currentTimeMillis();
+            setCollapsed(true, Integer.MAX_VALUE);
+            invalidateDrawOver2();
+            RoundVideoRecorder roundVideoRecorder = new RoundVideoRecorder(getContext()) { // from class: org.telegram.ui.Stories.recorder.CaptionStory.1
+                @Override // org.telegram.ui.Stories.recorder.RoundVideoRecorder
+                protected void receivedAmplitude(double d) {
+                    CaptionStory.this.setAmplitude(d);
+                }
+
+                @Override // org.telegram.ui.Stories.recorder.RoundVideoRecorder
+                public void stop() {
+                    super.stop();
+                    if (CaptionStory.this.recording) {
+                        CaptionStory.this.releaseRecord(true, false);
+                    }
+                }
+            };
+            this.currentRecorder = roundVideoRecorder;
+            putRecorder(roundVideoRecorder);
+            return true;
+        }
+        if (motionEvent.getAction() == 2) {
+            if (!this.cancelling) {
+                this.slideProgress = Utilities.clamp((this.fromX - motionEvent.getX()) / (getWidth() * 0.35f), 1.0f, 0.0f);
+                float fClamp = Utilities.clamp((this.fromY - motionEvent.getY()) / (getWidth() * 0.3f), 1.0f, 0.0f);
+                this.lockProgress = fClamp;
+                boolean z = this.locked;
+                if (!z && !this.cancelling && this.slideProgress >= 1.0f) {
+                    this.cancelling = true;
+                    this.recording = false;
+                    this.roundButton.setVisibility(4);
+                    this.periodButton.setVisibility(4);
+                    this.recordPaint.playDeleteAnimation();
+                    RoundVideoRecorder roundVideoRecorder2 = this.currentRecorder;
+                    if (roundVideoRecorder2 != null) {
+                        roundVideoRecorder2.cancel();
+                    }
+                    AndroidUtilities.runOnUIThread(this.doneCancel, 800L);
+                } else if (!z && !this.cancelling && fClamp >= 1.0f && this.slideProgress < 0.4f) {
+                    this.locked = true;
+                    try {
+                        performHapticFeedback(3, 1);
+                    } catch (Exception unused) {
+                    }
+                }
+                invalidate();
+                invalidateDrawOver2();
+            }
+        } else if (motionEvent.getAction() == 1 || motionEvent.getAction() == 3) {
+            if (!this.cancelling && !this.locked) {
+                releaseRecord(false, false);
+            }
+            this.recordTouch = false;
+        }
+        return this.recordTouch;
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public void releaseRecord(boolean z, boolean z2) {
+        AndroidUtilities.cancelRunOnUIThread(this.doneCancel);
+        this.stopping = true;
+        this.recording = false;
+        setCollapsed(false, (int) ((getBounds().right - AndroidUtilities.dp(20.0f)) - ((getWidth() * 0.35f) * this.slideProgress)));
+        RoundVideoRecorder roundVideoRecorder = this.currentRecorder;
+        if (roundVideoRecorder != null) {
+            if (!z) {
+                if (z2) {
+                    roundVideoRecorder.cancel();
+                } else {
+                    roundVideoRecorder.stop();
+                }
+            }
+            this.currentRecorder = null;
+        }
+        invalidateDrawOver2();
+    }
+
+    public boolean isRecording() {
+        return this.recording;
+    }
+
+    public boolean stopRecording() {
+        if (!this.recording) {
+            return false;
+        }
+        this.recordTouch = false;
+        releaseRecord(false, false);
+        return true;
+    }
+
+    public void showRemoveRoundAlert() {
+        TextView textView;
+        if (this.hasRoundVideo && (textView = (TextView) new AlertDialog.Builder(getContext(), this.resourcesProvider).setTitle(LocaleController.getString(R.string.StoryRemoveRoundTitle)).setMessage(LocaleController.getString(R.string.StoryRemoveRoundMessage)).setPositiveButton(LocaleController.getString(R.string.Remove), new AlertDialog.OnButtonClickListener() { // from class: org.telegram.ui.Stories.recorder.CaptionStory$$ExternalSyntheticLambda8
+            @Override // org.telegram.ui.ActionBar.AlertDialog.OnButtonClickListener
+            public final void onClick(AlertDialog alertDialog, int i) {
+                this.f$0.lambda$showRemoveRoundAlert$7(alertDialog, i);
+            }
+        }).setNegativeButton(LocaleController.getString(R.string.Cancel), null).show().getButton(-1)) != null) {
+            textView.setTextColor(Theme.getColor(Theme.key_text_RedBold, this.resourcesProvider));
+        }
+    }
+
+    /* JADX INFO: Access modifiers changed from: private */
+    public /* synthetic */ void lambda$showRemoveRoundAlert$7(AlertDialog alertDialog, int i) {
+        removeRound();
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView, android.view.ViewGroup, android.view.View
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        this.recordPaint.attach();
+    }
+
+    @Override // org.telegram.ui.Stories.recorder.CaptionContainerView, android.view.ViewGroup, android.view.View
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        this.recordPaint.detach();
+    }
+
+    private class RecordDot extends Drawable {
+        private float alpha;
+        boolean attachedToWindow;
+        RLottieDrawable drawable;
+        private boolean enterAnimation;
+        private boolean isIncr;
+        private long lastUpdateTime;
+        private final View parent;
+        boolean playing;
+        private final Paint redDotPaint = new Paint(1);
+        private float alpha2 = 1.0f;
+
+        @Override // android.graphics.drawable.Drawable
+        public int getOpacity() {
+            return -2;
+        }
+
+        @Override // android.graphics.drawable.Drawable
+        public void setColorFilter(ColorFilter colorFilter) {
+        }
+
+        public void attach() {
+            this.attachedToWindow = true;
+            if (this.playing) {
+                this.drawable.start();
+            }
+            this.drawable.setMasterParent(this.parent);
+        }
+
+        public void detach() {
+            this.attachedToWindow = false;
+            this.drawable.stop();
+            this.drawable.setMasterParent(null);
+        }
+
+        public RecordDot(View view) {
+            this.parent = view;
+            int i = R.raw.chat_audio_record_delete_3;
+            RLottieDrawable rLottieDrawable = new RLottieDrawable(i, _UrlKt.FRAGMENT_ENCODE_SET + i, AndroidUtilities.dp(28.0f), AndroidUtilities.dp(28.0f), false, null);
+            this.drawable = rLottieDrawable;
+            rLottieDrawable.setInvalidateOnProgressSet(true);
+            updateColors();
+        }
+
+        public void updateColors() {
+            this.redDotPaint.setColor(-2406842);
+            this.drawable.beginApplyLayerColors();
+            this.drawable.setLayerColor("Cup Red.**", -2406842);
+            this.drawable.setLayerColor("Box.**", -2406842);
+            this.drawable.commitApplyLayerColors();
+        }
+
+        @Override // android.graphics.drawable.Drawable
+        public void draw(Canvas canvas) {
+            if (this.playing) {
+                this.drawable.setAlpha((int) (this.alpha * 255.0f * this.alpha2));
+            }
+            this.redDotPaint.setAlpha((int) (this.alpha * 255.0f * this.alpha2));
+            long jCurrentTimeMillis = System.currentTimeMillis() - this.lastUpdateTime;
+            if (this.enterAnimation) {
+                this.alpha = 1.0f;
+            } else if (!this.isIncr && !this.playing) {
+                float f = this.alpha - (jCurrentTimeMillis / 600.0f);
+                this.alpha = f;
+                if (f <= 0.0f) {
+                    this.alpha = 0.0f;
+                    this.isIncr = true;
+                }
+            } else {
+                float f2 = this.alpha + (jCurrentTimeMillis / 600.0f);
+                this.alpha = f2;
+                if (f2 >= 1.0f) {
+                    this.alpha = 1.0f;
+                    this.isIncr = false;
+                }
+            }
+            this.lastUpdateTime = System.currentTimeMillis();
+            this.drawable.setBounds(getBounds());
+            if (this.playing) {
+                this.drawable.draw(canvas);
+            }
+            if (!this.playing || !this.drawable.hasBitmap()) {
+                canvas.drawCircle(getBounds().centerX(), getBounds().centerY(), AndroidUtilities.dp(5.0f), this.redDotPaint);
+            }
+            CaptionStory.this.invalidate();
+        }
+
+        @Override // android.graphics.drawable.Drawable
+        public void setAlpha(int i) {
+            this.alpha2 = i / 255.0f;
+        }
+
+        public void playDeleteAnimation() {
+            this.playing = true;
+            this.drawable.setProgress(0.0f);
+            if (this.attachedToWindow) {
+                this.drawable.start();
+            }
+        }
+
+        public void reset() {
+            this.playing = false;
+            this.drawable.stop();
+            this.drawable.setProgress(0.0f);
+        }
+    }
+}

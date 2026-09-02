@@ -1,0 +1,14 @@
+package com.google.android.gms.common.api.internal;
+
+final class zabm implements Runnable {
+    final /* synthetic */ zabq zaa;
+
+    zabm(zabq zabqVar) {
+        this.zaa = zabqVar;
+    }
+
+    @Override // java.lang.Runnable
+    public final void run() {
+        this.zaa.zaH();
+    }
+}

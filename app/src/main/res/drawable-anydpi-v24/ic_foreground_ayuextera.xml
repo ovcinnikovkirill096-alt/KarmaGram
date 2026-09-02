@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
+    android:height="1200dp"
+    android:width="1200dp"
+    android:viewportWidth="1200"
+    android:viewportHeight="1200">
+    <path
+        android:fillColor="@drawable/_ic_foreground_ayuextera__0_res_0x7f080025"
+        android:pathData="M647.58 378.7c-4.94-7.88-17.1-2.92-15.14 6.16l75.28 348.21c0.82 3.82 4.2 6.55 8.1 6.55h143c6.52 0 10.5-7.19 7.03-12.72L647.58 378.7Z"/>
+    <path
+        android:fillColor="@drawable/_ic_foreground_ayuextera__1_res_0x7f080026"
+        android:pathData="M615.63 815.91c0 7.95 10.09 11.35 14.9 5.03l46.79-61.46c1.47-1.93 2.02-4.41 1.5-6.78l-46.78-216.74c-2.1-9.73-16.41-8.2-16.41 1.75v278.2Z"/>
+    <path
+        android:fillColor="@drawable/_ic_foreground_ayuextera__2_res_0x7f080027"
+        android:pathData="M551.42 378.7c4.94-7.88 17.1-2.92 15.14 6.16l-75.28 348.21c-0.82 3.82-4.2 6.55-8.1 6.55h-143c-6.52 0-10.5-7.19-7.03-12.72l218.27-348.2Z"/>
+    <path
+        android:fillColor="@drawable/_ic_foreground_ayuextera__3_res_0x7f080028"
+        android:pathData="M583.37 815.91c0 7.95-10.09 11.35-14.9 5.03l-46.79-61.46c-1.47-1.93-2.02-4.41-1.5-6.78l46.78-216.74c2.1-9.73 16.41-8.2 16.41 1.75v278.2Z"/>
+</vector>

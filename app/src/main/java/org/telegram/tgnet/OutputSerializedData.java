@@ -1,0 +1,23 @@
+package org.telegram.tgnet;
+
+public interface OutputSerializedData {
+    void writeBool(boolean z);
+
+    void writeByte(byte b);
+
+    void writeByteArray(byte[] bArr);
+
+    void writeByteBuffer(NativeByteBuffer nativeByteBuffer);
+
+    void writeBytes(byte[] bArr);
+
+    void writeDouble(double d);
+
+    void writeFloat(float f);
+
+    void writeInt32(int i);
+
+    void writeInt64(long j);
+
+    void writeString(String str);
+}

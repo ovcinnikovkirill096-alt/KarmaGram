@@ -1,0 +1,22 @@
+package com.sun.jna;
+
+import java.lang.reflect.Field;
+
+public class StructureReadContext extends FromNativeContext {
+    private Field field;
+    private Structure structure;
+
+    StructureReadContext(Structure structure, Field field) {
+        super(field.getType());
+        this.structure = structure;
+        this.field = field;
+    }
+
+    public Structure getStructure() {
+        return this.structure;
+    }
+
+    public Field getField() {
+        return this.field;
+    }
+}

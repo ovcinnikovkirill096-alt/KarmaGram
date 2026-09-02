@@ -1,0 +1,23 @@
+package com.google.android.gms.internal.wallet;
+
+import android.os.Parcel;
+import android.os.Parcelable;
+import com.google.android.gms.common.internal.safeparcel.AbstractSafeParcelable;
+import com.google.android.gms.common.internal.safeparcel.SafeParcelWriter;
+
+public final class zzi extends AbstractSafeParcelable {
+    public static final Parcelable.Creator<zzi> CREATOR = new zzj();
+    final byte[] zza;
+
+    public zzi(byte[] bArr) {
+        this.zza = bArr;
+    }
+
+    @Override // android.os.Parcelable
+    public final void writeToParcel(Parcel parcel, int i) {
+        byte[] bArr = this.zza;
+        int iBeginObjectHeader = SafeParcelWriter.beginObjectHeader(parcel);
+        SafeParcelWriter.writeByteArray(parcel, 1, bArr, false);
+        SafeParcelWriter.finishObjectHeader(parcel, iBeginObjectHeader);
+    }
+}

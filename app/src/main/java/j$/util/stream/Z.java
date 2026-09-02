@@ -1,0 +1,59 @@
+package j$.util.stream;
+
+import j$.util.Objects;
+import j$.util.Spliterator;
+import java.util.function.IntConsumer;
+
+public final class Z extends AbstractC0249k2 {
+    public boolean b;
+    public final j$.util.H c;
+    public final /* synthetic */ X d;
+
+    /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
+    public Z(X x, InterfaceC0279q2 interfaceC0279q2) {
+        super(interfaceC0279q2);
+        this.d = x;
+        InterfaceC0279q2 interfaceC0279q3 = this.a;
+        Objects.requireNonNull(interfaceC0279q3);
+        this.c = new j$.util.H(interfaceC0279q3, 1);
+    }
+
+    @Override // j$.util.stream.AbstractC0249k2, j$.util.stream.InterfaceC0279q2
+    public final void h(long j) {
+        this.a.h(-1L);
+    }
+
+    @Override // j$.util.stream.InterfaceC0269o2, j$.util.stream.InterfaceC0279q2
+    public final void accept(int i) {
+        IntStream intStream = (IntStream) ((N) this.d.t).apply(i);
+        if (intStream != null) {
+            try {
+                boolean z = this.b;
+                j$.util.H h = this.c;
+                if (!z) {
+                    intStream.sequential().forEach(h);
+                } else {
+                    Spliterator.OfInt ofIntSpliterator = intStream.sequential().spliterator();
+                    while (!this.a.m() && ofIntSpliterator.tryAdvance((IntConsumer) h)) {
+                    }
+                }
+            } catch (Throwable th) {
+                try {
+                    intStream.close();
+                } catch (Throwable th2) {
+                    th.addSuppressed(th2);
+                }
+                throw th;
+            }
+        }
+        if (intStream != null) {
+            intStream.close();
+        }
+    }
+
+    @Override // j$.util.stream.AbstractC0249k2, j$.util.stream.InterfaceC0279q2
+    public final boolean m() {
+        this.b = true;
+        return this.a.m();
+    }
+}

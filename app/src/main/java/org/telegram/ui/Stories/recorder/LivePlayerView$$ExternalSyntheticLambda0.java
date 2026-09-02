@@ -1,0 +1,12 @@
+package org.telegram.ui.Stories.recorder;
+
+import org.telegram.ui.Stories.LivePlayer;
+
+public final /* synthetic */ class LivePlayerView$$ExternalSyntheticLambda0 implements Runnable {
+    public final /* synthetic */ LivePlayer f$0;
+
+    @Override // java.lang.Runnable
+    public final void run() {
+        this.f$0.continueStreaming();
+    }
+}

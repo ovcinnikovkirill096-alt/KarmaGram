@@ -1,0 +1,13 @@
+package com.google.android.gms.common.internal;
+
+import com.google.android.gms.common.api.Result;
+
+final class zar implements PendingResultUtil.ResultConverter {
+    zar() {
+    }
+
+    @Override // com.google.android.gms.common.internal.PendingResultUtil.ResultConverter
+    public final /* bridge */ /* synthetic */ Object convert(Result result) {
+        return null;
+    }
+}

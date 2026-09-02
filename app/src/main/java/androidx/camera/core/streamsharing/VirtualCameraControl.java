@@ -1,0 +1,13 @@
+package androidx.camera.core.streamsharing;
+
+import androidx.camera.core.impl.CameraControlInternal;
+import androidx.camera.core.impl.ForwardingCameraControl;
+
+public class VirtualCameraControl extends ForwardingCameraControl {
+    private final StreamSharing.Control mStreamSharingControl;
+
+    VirtualCameraControl(CameraControlInternal cameraControlInternal, StreamSharing.Control control) {
+        super(cameraControlInternal);
+        this.mStreamSharingControl = control;
+    }
+}
