@@ -1,0 +1,37 @@
+name: Build KarmaGram
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Remove local AAPT2 override
+        run: sed -i '/^android\.aapt2FromMavenOverride=/d' gradle.properties
+
+      - name: Build Release APK
+        run: gradle assembleRelease
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KarmaGram-APK
+          path: app/build/outputs/apk/release/*.apk
