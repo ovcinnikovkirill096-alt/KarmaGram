@@ -5133,9 +5133,9 @@
         <item name="widgetPreviewImage">@drawable/widget_avatar_5</item>
         <item name="widgetPreviewTime">13:00</item>
         <item name="widgetPreviewTitle">Local Weather</item>
-    </style>
+        <item name="widgetPreviewContent">Its morning in Tokyo</item>        </style>
     <style name="Theme.TMessages.AppWidget.Preview2" parent="@style/Theme.TMessages.AppWidget">
-        <item name="widgetPreviewContent">It&apos;s morning in Tokyo ��</item>
+        <item name="widgetPreviewContent">Its morning in Tokyo</item>
         <item name="widgetPreviewDot">2</item>
         <item name="widgetPreviewImage">@drawable/widget_avatar_7</item>
         <item name="widgetPreviewTime">12:00</item>
