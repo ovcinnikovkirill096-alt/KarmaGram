@@ -254,7 +254,7 @@
     </style>
     <style name="Base.Theme.AppCompat.CompactMenu" parent="">
         <item name="android:listViewStyle">@style/Widget.AppCompat.ListView.Menu</item>
-        <item name="android:windowAnimationStyle">@style/Animation.AppCompat.DropDownUp</item>
+        <item name="android:breakStrategy">simple</item>
         <item name="android:itemTextAppearance">?android:attr/textAppearanceMedium</item>
     </style>
     <style name="Base.Theme.AppCompat.Dialog" parent="@style/Base.V21.Theme.AppCompat.Dialog">
