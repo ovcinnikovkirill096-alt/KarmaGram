@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="cast_button_type_closed_caption" type="id" />
+    <item name="cast_button_type_custom" type="id" />
+    <item name="cast_button_type_empty" type="id" />
+    <item name="cast_button_type_forward_30_seconds" type="id" />
+    <item name="cast_button_type_mute_toggle" type="id" />
+    <item name="cast_button_type_play_pause_toggle" type="id" />
+    <item name="cast_button_type_rewind_30_seconds" type="id" />
+    <item name="cast_button_type_skip_next" type="id" />
+    <item name="cast_button_type_skip_previous" type="id" />
+</resources>
